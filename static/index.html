@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="http://localhost:3001/websockets/socket.io.js"></script>
+    <title>Websocket Clients</title>
+</head>
+
+<body>
+    <div id="v-app">
+        <h1>Title</h1>
+        <form>
+            <input v-model="text" type="text" />
+            <button type="submit" @click.prevent="sendMessage()">Send</button>
+        </form>
+        <p>
+        <ul>
+            <li v-for='msg of messages'>{{msg}}</li>
+        </ul>
+        </p>
+    </div>
+    <script>
+        var app = Vue.createApp({
+            data() {
+                return {
+                    title: 'Websockets Tester',
+                    text: '',
+                    messages: ['Some message', 'Another message'],
+                    socket: null,
+                }
+            },
+            methods: {
+                sendMessage() {
+                    console.log(`send message: ${this.text}`);
+                    this.socket.emit('msgToServer', this.text);
+                    this.text = '';
+                },
+                receiveMessage(msg) {
+                    console.log(`receive message: ${msg}`);
+                    this.messages.push(msg);
+                }
+            },
+            created() {
+                this.socket = io('http://localhost:3001', { path: '/websockets' });
+                this.socket.on('msgToClient', (msg) => {
+                    this.receiveMessage(msg);
+                })
+            }
+        }).mount('#v-app');
+    </script>
+</body>
+
+
+</html>
