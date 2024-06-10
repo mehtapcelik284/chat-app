@@ -4874,6 +4874,11 @@ vary@^1, vary@~1.1.2:
   resolved "https://registry.yarnpkg.com/vary/-/vary-1.1.2.tgz#2299f02c6ded30d4a5961b0b9f74524a18f634fc"
   integrity sha512-BNGbWLfd0eUPabhkXUVm0j8uuvREyTh5ovRa/dyow/BqAbZJyC+5fU+IzQOzmAKzYqYRAISoRhdQr3eIZ/PXqg==
 
+vue-simple-notify@^1.0.5:
+  version "1.0.5"
+  resolved "https://registry.yarnpkg.com/vue-simple-notify/-/vue-simple-notify-1.0.5.tgz#95479e3e443df75882fc62e9dde106eb5d634b37"
+  integrity sha512-XlkG5+e7Nf+k4sn43MAtP2/CEa6/QUpnU8HvAuqPatN3XZhztKxK/K0+Lo1B1+kukYYBAYbGIxgJSp7i36YMxA==
+
 walker@^1.0.8:
   version "1.0.8"
   resolved "https://registry.yarnpkg.com/walker/-/walker-1.0.8.tgz#bd498db477afe573dc04185f011d3ab8a8d7653f"
