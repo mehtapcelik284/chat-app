@@ -2,131 +2,115 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link href="./styles.css" rel="stylesheet">
-    <script src="https://unpkg.com/vue@3/dist/vue.global.js">
-    </script>
-    <script src="/socket.io/socket.io.js"></script>
-    <title>Websocket Clients</title>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link href="./styles.css" rel="stylesheet">
+	<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+	<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+	<script src="/socket.io/socket.io.js"></script>
+	<title>Websocket Clients</title>
 </head>
 
 <body>
-    <main id="v-app">
-        <section class="alerts">
-            <p>
-            <ul>
-                <li v-for='el of alerts'>
-                    {{el.message}}
-                </li>
-            </ul>
-            </p>
-        </section>
-        <section class="chat">
-            <h1>Websockets Tester</h1>
-            <form>
-                <input v-model="text" type="text" />
-                <button type="submit" @click.prevent="sendChatMessage()">Send</button>
-            </form>
-            <div class="tab-row">
-                <button class="tab-btn" :class="{active: activeRoom ==='general' }"
-                    @click="activeRoom='general'">General</button>
-                <button class="tab-btn" :class="{active: activeRoom ==='typescript' }"
-                    @click="activeRoom='typescript'">Typescript</button>
-                <button class="tab-btn" :class="{active: activeRoom ==='nestjs' }"
-                    @click="activeRoom='nestjs'">NestJS</button>
-            </div>
-            <div class="tab-row">
-                Status: {{isMemberOfActiveRoom ? 'Joined' : 'Not Joined'}} <button @click="toggleRoomMembership()">
-                    {{isMemberOfActiveRoom ? 'Leave' : 'Join'}}</button>
-            </div>
-            <p>
-            <ul>
-                <li v-for='msg of messages[activeRoom]'>
-                    <strong>
-                        {{msg.sender}}
-                    </strong>
-                    {{msg.message}}
-                </li>
-            </ul>
-            </p>
-        </section>
+	<div id="root"></div>
+	<script type="text/javascript">
+		const { useState, useEffect } = React;
+		const { createElement: e } = React;
+		const root = document.getElementById('root');
 
-    </main>
-    <script>
-        var app = Vue.createApp({
-            data() {
-                return {
-                    username: '',
-                    text: '',
-                    messages: {
-                        general: [],
-                        typescript: [],
-                        nestjs: []
-                    },
-                    rooms: {
-                        general: false,
-                        typescript: false,
-                        nestjs: false
-                    },
-                    socket: { chat: null, alerts: null },
-                    alerts: [],
-                    activeRoom: 'general'
-                }
-            },
-            methods: {
-                sendChatMessage() {
-                    //Check if the user is member of the active room:
-                    if (this.isMemberOfActiveRoom) {
-                        this.socket.chat.emit('chatToServer', { sender: this.username, message: this.text, room: this.activeRoom });
-                        this.text = '';
-                    }
-                    else {
-                        alert("You must a member of the active room to send a message!")
-                    }
-                },
-                receiveChatMessage(msg) {
-                    this.messages[msg.room].push(msg);
-                },
-                receiveAlertMessage(msg) {
-                    this.alerts.push(msg);
-                },
-                toggleRoomMembership() {
-                    if (this.isMemberOfActiveRoom) {
-                        this.socket.chat.emit('leaveRoom', this.activeRoom)
-                    }
-                    else {
-                        this.socket.chat.emit('joinRoom', this.activeRoom)
-                    }
-                }
-            },
-            computed: {
-                isMemberOfActiveRoom() {
-                    return this.rooms[this.activeRoom]
-                }
-            },
-            created() {
-                this.username = prompt('Enter your username');
-                this.socket.chat = io('http://localhost:3000/chat');
-                this.socket.chat.on('chatToClient', (msg) => {
-                    this.receiveChatMessage(msg);
-                });
-                this.socket.chat.on('connect', () => {
-                    this.toggleRoomMembership();
-                });
-                this.socket.chat.on('joinedRoom', (room) => {
-                    this.rooms[room] = true;
-                });
-                this.socket.chat.on('leftRoom', (room) => {
-                    this.rooms[room] = false;
-                });
-                this.socket.alerts = io('http://localhost:3000/alert')
-                this.socket.alerts.on('alertToClient', (msg) => {
-                    this.receiveAlertMessage(msg);
-                });
-            }
-        }).mount('#v-app');
-    </script>
+		function App() {
+			const [username, setUsername] = useState('');
+			const [text, setText] = useState('');
+			const [messages, setMessages] = useState({ room1: [], room2: [], room3: [] });
+			const [rooms, setRooms] = useState({ room1: false, room2: false, room3: false });
+			const [alerts, setAlerts] = useState([]);
+			const [activeRoom, setActiveRoom] = useState('room1');
+			const [socket, setSocket] = useState(null);
+
+			useEffect(() => {
+				const sock = io('http://localhost:3000/chat');
+				sock.on('chatToClient', (msg) => {
+					setMessages(prev => ({
+						...prev,
+						[msg.room]: [...prev[msg.room], msg]
+					}));
+				});
+				sock.on('joinedRoom', (room) => {
+					setRooms(prev => ({
+						...prev,
+						[room]: true
+					}));
+				});
+				sock.on('leftRoom', (room) => {
+					setRooms(prev => ({
+						...prev,
+						[room]: false
+					}));
+				});
+				sock.on('alertToClient', (msg) => {
+					setAlerts(prev => [...prev, msg]);
+				});
+				setSocket(sock);
+				const user = prompt('Enter your username');
+				setUsername(user);
+				return () => { sock.disconnect(); };
+			}, []);
+
+			const sendChatMessage = (e) => {
+				e.preventDefault();
+				if (rooms[activeRoom]) {
+					socket.emit('chatToServer', { sender: username, message: text, room: activeRoom });
+					setText('');
+				} else {
+					alert("You must be a member of the active room to send a message!");
+				}
+			};
+
+			const toggleRoomMembership = () => {
+				if (rooms[activeRoom]) {
+					socket.emit('leaveRoom', activeRoom);
+				} else {
+					socket.emit('joinRoom', activeRoom);
+				}
+			};
+
+			return e('div', null,
+				e('section', { className: 'alerts' },
+					e('ul', null, alerts.map((alert, idx) =>
+						e('li', { key: idx }, alert.message)
+					))
+				),
+				e('section', { className: 'chat' },
+					e('h1', null, 'Chat App'),
+					e('form', { onSubmit: sendChatMessage },
+						e('input', { type: 'text', value: text, onChange: (e) => setText(e.target.value) }),
+						e('button', { type: 'submit', className: 'btn-send' }, 'Send')
+					),
+					e('div', { className: 'tab-row' },
+						['room1', 'room2', 'room3'].map((room) =>
+							e('button', {
+								key: room,
+								className: `tab-btn ${activeRoom === room ? 'active' : ''}`,
+								onClick: () => setActiveRoom(room)
+							}, room.charAt(0).toUpperCase() + room.slice(1))
+						)
+					),
+					e('div', { className: 'tab-row' },
+						e('span', null, `Status: ${rooms[activeRoom] ? 'Joined' : 'Not Joined'} `),
+						e('button', { onClick: toggleRoomMembership }, rooms[activeRoom] ? 'Leave' : 'Join')
+					),
+					e('ul', null, messages[activeRoom].map((msg, idx) =>
+						e('li', { key: idx },
+							e('strong', null, msg.sender),
+							` ${msg.message}`
+						)
+					))
+				)
+			);
+		}
+
+		ReactDOM.render(e(App), root);
+	</script>
 </body>
 
 </html>

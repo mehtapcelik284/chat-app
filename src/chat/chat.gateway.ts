@@ -3,7 +3,10 @@ import {
   SubscribeMessage,
   WebSocketGateway,
   WebSocketServer,
+  MessageBody,
+  ConnectedSocket,
 } from '@nestjs/websockets';
+
 import { Server, Socket } from 'socket.io';
 
 @WebSocketGateway({ namespace: '/chat' })
@@ -17,20 +20,26 @@ export class ChatGateway {
 
   @SubscribeMessage('chatToServer')
   handleMessage(
-    client: Socket,
-    message: { sender: string; room: string; message: string },
+    @ConnectedSocket() client: Socket,
+    @MessageBody() message: { sender: string; room: string; message: string },
   ) {
     this.wss.to(message.room).emit('chatToClient', message);
   }
 
   @SubscribeMessage('joinRoom')
-  handleJoinRoom(client: Socket, room: string) {
+  handleJoinRoom(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() room: string,
+  ) {
     client.join(room);
     client.emit('joinedRoom', room);
   }
 
   @SubscribeMessage('leaveRoom')
-  handleLeaveRoom(client: Socket, room: string) {
+  handleLeaveRoom(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() room: string,
+  ) {
     client.leave(room);
     client.emit('leftRoom', room);
   }
